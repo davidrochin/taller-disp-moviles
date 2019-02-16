@@ -118,8 +118,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean lastCharacterIsNumber(){
-        char last = screen.getText().toString().charAt(screen.getText().toString().length() - 1);
-        return Character.isDigit(last);
+
+        int lastPos = screen.getText().toString().length() - 1;
+
+        if(lastPos >= 0 && lastPos < screen.getText().toString().length()){
+            char last = screen.getText().toString().charAt(lastPos);
+            return Character.isDigit(last);
+        } else {
+            return false;
+        }
+
     }
 
     private void calculate(){
