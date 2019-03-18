@@ -2,12 +2,18 @@ package com.example.tdmpaises;
 
 public class Country {
 
-    private int id;
+    private int id = -1;
     private String name;
-    private String area;
-    private String population;
+    private float area;
+    private int population;
 
-    public Country(int id, String name, String area, String population) {
+    public Country(String name, float area, int population) {
+        this.name = name;
+        this.area = area;
+        this.population = population;
+    }
+
+    public Country(int id, String name, float area, int population) {
         this.id = id;
         this.name = name;
         this.area = area;
@@ -22,19 +28,19 @@ public class Country {
         this.name = name;
     }
 
-    public String getArea() {
+    public float getArea() {
         return area;
     }
 
-    public void setArea(String area) {
+    public void setArea(float area) {
         this.area = area;
     }
 
-    public String getPopulation() {
+    public int getPopulation() {
         return population;
     }
 
-    public void setPopulation(String population) {
+    public void setPopulation(int population) {
         this.population = population;
     }
 
