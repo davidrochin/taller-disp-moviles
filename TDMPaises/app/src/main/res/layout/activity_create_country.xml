@@ -8,6 +8,17 @@
     android:orientation="vertical"
     tools:context=".CreateCountryActivity">
 
+    <ImageView
+        android:id="@+id/btnImage"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:tint="@color/colorAccent"
+        app:srcCompat="@drawable/ic_camera_alt_black_24dp" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
     <EditText
         android:id="@+id/txtNombre"
         android:layout_width="match_parent"

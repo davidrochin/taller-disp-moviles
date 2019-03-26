@@ -103,6 +103,16 @@
             android:textColor="@android:color/tertiary_text_light"
             tools:text="Texto" />
 
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="10dp" />
+
+        <ImageView
+            android:id="@+id/imgCountry"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
     </LinearLayout>
 
 </LinearLayout>

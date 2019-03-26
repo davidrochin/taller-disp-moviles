@@ -3,6 +3,9 @@ package com.example.tdmpaises;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,6 +16,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 import android.widget.TextView;
@@ -20,6 +24,7 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,8 +36,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     EditText txtArea;
     EditText txtPopulation;
     Spinner spinner;
+    ImageView imgCountry;
 
-    List<Country> countries = new ArrayList<>();
+    public static List<Country> countries = new ArrayList<>();
 
     CountryDBHelper countryDB;
 
@@ -46,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         txtName = findViewById(R.id.txtName);
         txtArea = findViewById(R.id.txtArea);
         txtPopulation = findViewById(R.id.txtPopulation);
+        imgCountry = findViewById(R.id.imgCountry);
 
         spinner.setOnItemSelectedListener(this);
 
@@ -99,6 +106,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         txtName.setText(country.getName());
         txtArea.setText(country.getArea() + " km/2");
         txtPopulation.setText(country.getPopulation() + " millones");
+
+        if(country.getImage() != null){
+            File imgFile = new  File(this.getApplicationContext().getFilesDir().getPath() + country.getImage());
+            if(imgFile.exists()){
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+                //Drawable d = new BitmapDrawable(getResources(), myBitmap);
+                imgCountry.setImageBitmap(myBitmap);
+            }
+        } else {
+            imgCountry.setImageBitmap(null);
+        }
+
     }
 
     @Override

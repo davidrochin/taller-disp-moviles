@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.net.Uri;
 import android.util.Log;
 
 import com.example.tdmpaises.CountryContract.CountryEntry;
@@ -32,7 +33,8 @@ public class CountryDBHelper extends SQLiteOpenHelper {
                 + CountryEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + CountryEntry.NAME + " TEXT NOT NULL,"
                 + CountryEntry.AREA + " INTEGER NOT NULL,"
-                + CountryEntry.POPULATION + " INTEGER NOT NULL)");
+                + CountryEntry.POPULATION + " INTEGER NOT NULL,"
+                + CountryEntry.IMAGE + " TEXT)");
 
         Log.d(getClass().getSimpleName(), "Inserting data...");
 
@@ -60,6 +62,12 @@ public class CountryDBHelper extends SQLiteOpenHelper {
                     cursor.getFloat(cursor.getColumnIndex(CountryEntry.AREA)),
                     cursor.getInt(cursor.getColumnIndex(CountryEntry.POPULATION))
             );
+
+            String imageUriString = cursor.getString(cursor.getColumnIndex(CountryEntry.IMAGE));
+            if(imageUriString != null){
+                country.setImage(imageUriString);
+            }
+
             countries.add(country);
         }
 
@@ -75,6 +83,10 @@ public class CountryDBHelper extends SQLiteOpenHelper {
         values.put(CountryEntry.NAME, country.getName());
         values.put(CountryEntry.AREA, country.getArea());
         values.put(CountryEntry.POPULATION, country.getPopulation());
+
+        if(country.getImage() != null){
+            values.put(CountryEntry.IMAGE, country.getImage());
+        }
 
         db.insert(CountryEntry.TABLE_NAME, null, values);
     }

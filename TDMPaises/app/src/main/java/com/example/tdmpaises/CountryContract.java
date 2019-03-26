@@ -11,5 +11,6 @@ public final class CountryContract {
         public static final String NAME = "name";
         public static final String AREA = "area";
         public static final String POPULATION = "population";
+        public static final String IMAGE = "image";
     }
 }
