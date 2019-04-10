@@ -10,7 +10,9 @@ import { TextInput } from 'react-native-gesture-handler';
 
 import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-native-popup-menu';
 
-import { ContactListItem } from './ContactListItem';
+import SQLite from "react-native-sqlite-storage";
+
+import ContactListItem from './ContactListItem';
 
 const contactList = [
   { key: '1', name: 'Juan Lopez', phone: '6681732104', email: 'email@hotmail.com' },
@@ -36,11 +38,17 @@ class HomeScreen extends React.Component {
 
     return (
       <View style={styles.container} style={{ flex: 1 }}>
+
         <FlatList style={{ flex: 1 }}
           data={contactList}
           renderItem={
             ({ item }) =>
-              <Text>Texto</Text>
+              <ContactListItem
+                item={item}
+                onOpen={() => {
+                  navigate('Contact', { contact: item });
+                }}
+              />
           }
           ItemSeparatorComponent={
             () => <View style={{ height: 1, width: '100%', backgroundColor: "#EFEFEF" }}></View>
@@ -144,11 +152,25 @@ const MainNavigator = createStackNavigator({
 
 const AppContainer = createAppContainer(MainNavigator);
 
-const App = () => (
-  <MenuProvider>
-    <AppContainer />
-  </MenuProvider>
-);
+class App extends React.Component {
+  render() {
+    return <AppContainer />;
+  }
+
+  componentDidMount() {
+    SQLite.DEBUG(true);
+    SQLite.enablePromise(true);
+
+    SQLite.openDatabase({
+      name: "TestDatabase",
+      location: "default"
+    }).then((db) => {
+      console.log("Database open!");
+    }).catch(e => {
+      console.log('There has been a problem with your operation: ' + e.message);
+    });
+  }
+}
 
 export default App;
 

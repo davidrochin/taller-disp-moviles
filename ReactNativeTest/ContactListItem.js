@@ -6,38 +6,59 @@ import { ListItem, Header, Input, FormInput, Button, Card, Image, ActivityIndica
 import ActionButton from 'react-native-action-button';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { createStackNavigator, createAppContainer, AppNavigator } from 'react-navigation';
-import { TextInput } from 'react-native-gesture-handler';
+import { TextInput, ScrollView } from 'react-native-gesture-handler';
 
-import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-native-popup-menu';
+import {
+    MaterialDialog,
+    MultiPickerMaterialDialog,
+    SinglePickerMaterialDialog,
+} from 'react-native-material-dialog';
+
+import { material } from 'react-native-typography';
 
 export default class ContactListItem extends React.Component {
 
     constructor(props) {
         super(props);
+
+        this.state = {
+            opened: false
+        }
     }
 
     render() {
-        <TouchableOpacity>
-            <Text>Hola!</Text>
+        return <TouchableOpacity>
             <ListItem
-                title={item.name}
+                title={this.props.item.name}
                 titleStyle={{ color: 'black' }}
                 subtitle='6681732104'
                 leftAvatar={{ source: { uri: 'http://lorempixel.com/256/256/people' + '?rand=' + Math.random() } }}
                 chevron
                 rightElement={
-                    <Menu>
-                        <MenuTrigger text='' />
-                        <MenuOptions>
-                            <MenuOption onSelect={() => alert(`Save`)} text='Abrir' />
-                            <MenuOption onSelect={() => alert(`Save`)} text='Editar' />
-                            <MenuOption onSelect={() => alert(`Save`)} text='Eliminar' />
-                            <MenuOption onSelect={() => alert(`Save`)} text='Llamar' />
-                            <MenuOption onSelect={() => alert(`Save`)} text='SMS' />
-                        </MenuOptions>
-                    </Menu>
+                    <MaterialDialog
+                        title={'Acción'}
+                        visible={this.state.opened}
+                        onCancel={() => {
+                            this.setState({ opened: false });
+                        }}>
+                        <ScrollView>
+                            <TouchableOpacity style={styles.listElement}><Text style={material.subheading}>Abrir</Text></TouchableOpacity>
+                            <TouchableOpacity style={styles.listElement}><Text style={material.subheading}>Editar</Text></TouchableOpacity>
+                            <TouchableOpacity style={styles.listElement}><Text style={material.subheading}>Llamar</Text></TouchableOpacity>
+                            <TouchableOpacity style={styles.listElement}><Text style={material.subheading}>SMS</Text></TouchableOpacity>
+                        </ScrollView>
+                    </MaterialDialog>
                 }
+                onLongPress={() => {
+                    this.setState(previous => ({ opened: true }));
+                }}
             />
         </TouchableOpacity>
     }
 }
+
+const styles = StyleSheet.create({
+    listElement: {
+        height: 30
+    }
+});
