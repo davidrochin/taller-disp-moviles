@@ -8,6 +8,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { createStackNavigator, createAppContainer, AppNavigator } from 'react-navigation';
 import { TextInput, ScrollView } from 'react-native-gesture-handler';
 
+import {Linking} from 'react-native'
+
 import {
     MaterialDialog,
     MultiPickerMaterialDialog,
@@ -27,7 +29,7 @@ export default class ContactListItem extends React.Component {
     }
 
     render() {
-        return <TouchableOpacity>
+        return (<TouchableOpacity>
             <ListItem
                 title={this.props.item.name}
                 titleStyle={{ color: 'black' }}
@@ -42,10 +44,47 @@ export default class ContactListItem extends React.Component {
                             this.setState({ opened: false });
                         }}>
                         <ScrollView>
-                            <TouchableOpacity style={styles.listElement}><Text style={material.subheading}>Abrir</Text></TouchableOpacity>
-                            <TouchableOpacity style={styles.listElement}><Text style={material.subheading}>Editar</Text></TouchableOpacity>
-                            <TouchableOpacity style={styles.listElement}><Text style={material.subheading}>Llamar</Text></TouchableOpacity>
-                            <TouchableOpacity style={styles.listElement}><Text style={material.subheading}>SMS</Text></TouchableOpacity>
+
+                            {/* Abrir */}
+                            <TouchableOpacity
+                                style={styles.listElement}
+                                onPress={() => {
+                                    this.setState({ opened: false });
+                                    this.props.onOpen();
+                                }}>
+                                <Text style={material.subheading}>Abrir</Text>
+                            </TouchableOpacity>
+
+                            {/* Editar */}
+                            <TouchableOpacity
+                                style={styles.listElement}
+                                onPress={() => {
+                                    this.setState({ opened: false });
+                                    this.props.onEdit();
+                                }}>
+                                <Text style={material.subheading}>Editar</Text>
+                            </TouchableOpacity>
+
+                            {/* Llamar */}
+                            <TouchableOpacity
+                                style={styles.listElement}
+                                onPress={() => {
+                                    this.setState({ opened: false });
+                                    this.props.onCall();
+                                }}>
+                                <Text style={material.subheading}>Llamar</Text>
+                            </TouchableOpacity>
+
+                            {/* SMS */}
+                            <TouchableOpacity
+                                style={styles.listElement}
+                                onPress={() => {
+                                    this.setState({ opened: false });
+                                    this.props.onSMS();
+                                }}>
+                                <Text style={material.subheading}>SMS</Text>
+                            </TouchableOpacity>
+
                         </ScrollView>
                     </MaterialDialog>
                 }
@@ -53,7 +92,7 @@ export default class ContactListItem extends React.Component {
                     this.setState(previous => ({ opened: true }));
                 }}
             />
-        </TouchableOpacity>
+        </TouchableOpacity>);
     }
 }
 

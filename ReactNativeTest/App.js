@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Platform, FlatList, StyleSheet, Text, View, TouchableOpacity, Modal, Alert, TouchableHighlight } from 'react-native';
+import { Platform, FlatList, StyleSheet, Text, View, TouchableOpacity, Modal, Alert, TouchableHighlight, Linking } from 'react-native';
 
 import { ListItem, Header, Input, FormInput, Button, Card, Image, ActivityIndicator } from 'react-native-elements';
 
@@ -14,27 +14,49 @@ import SQLite from "react-native-sqlite-storage";
 
 import ContactListItem from './ContactListItem';
 
-const contactList = [
-  { key: '1', name: 'Juan Lopez', phone: '6681732104', email: 'email@hotmail.com' },
-  { key: '2', name: 'José Perez', phone: '6681732104', email: 'email@hotmail.com' },
-  { key: '3', name: 'David Rodriguez', phone: '6681732104', email: 'email@hotmail.com' },
-  { key: '4', name: 'Alberto Rojo', phone: '6681732104', email: 'email@hotmail.com' },
-  { key: '5', name: 'Alejandra Gonzalez', phone: '6681732104', email: 'email@hotmail.com' },
-  { key: '6', name: 'Luis Peña', phone: '6681732104', email: 'email@hotmail.com' },
-  { key: '7', name: 'Martin Salcido', phone: '6681732104', email: 'email@hotmail.com' },
-  { key: '8', name: 'Gerardo Ruiz', phone: '6681732104', email: 'email@hotmail.com' },
-  { key: '9', name: 'Estefania Lopez', phone: '6681732104', email: 'email@hotmail.com' },
-  { key: '10', name: 'Sandra Gomez', phone: '6681732104', email: 'email@hotmail.com' },
-  { key: '11', name: 'Yahir Diaz', phone: '6681732104', email: 'email@hotmail.com' },
-];
-
-
 class HomeScreen extends React.Component {
+
+  constructor(props) {
+    super(props);
+  }
+
   static navigationOptions = {
     title: 'Contactos',
   };
+
   render() {
     const { navigate } = this.props.navigation;
+    contactList = new Array(0);
+
+    console.log('Actualizando lista de contactos');
+
+    Helper.db.transaction(function (txn) {
+      txn.executeSql(
+        'SELECT * FROM contacts',
+        [], 
+        function (tx, res) {
+
+          console.log(res.rows);
+          for(i = 0; i < res.rows.length; i++){
+            contactList.push(res.rows.item(i));
+          }
+
+        }
+      );
+    });
+
+    
+    /*Helper.db.transaction(function(txn) {
+      txn.executeSql(
+        'SELECT * FROM contacts',
+        function(tx, res) {
+          console.log('Imprimiendo Res');
+          console.log(res);
+        }
+      );
+    });*/
+
+    console.log('Rendering with: ' + contactList);
 
     return (
       <View style={styles.container} style={{ flex: 1 }}>
@@ -47,6 +69,9 @@ class HomeScreen extends React.Component {
                 item={item}
                 onOpen={() => {
                   navigate('Contact', { contact: item });
+                }}
+                onCall={() => {
+                  Linking.openURL('tel:${' + item.phone + '}')
                 }}
               />
           }
@@ -66,11 +91,15 @@ class HomeScreen extends React.Component {
 
 class ContactScreen extends React.Component {
 
+  contact;
+
   constructor(props) {
     super(props);
     this.state = {
       editing: false
     }
+
+    contact = this.props.navigation.getParam('contact', null);
   }
 
   handlerEditButton() {
@@ -83,7 +112,17 @@ class ContactScreen extends React.Component {
     title: "Contacto",
     headerRight: (
       <Button
-        onPress={() => alert('Guardando...')}
+        onPress={() => {
+          SQLite.openDatabase({
+            name: "app.db",
+            location: "default",
+          }).then((db) => {
+            console.log("Database open!");
+            db.executeSql('INSERT INTO contacts (id, name, phone, email) VALUES (?, ?, ?, ?)', [contact.id, contact.name, contact.phone, contact.email]);
+          }).catch(e => {
+            console.log('There has been a problem with your operation: ' + e.message);
+          });
+        }}
         title="Guardar"
         color="#000"
         type="clear"
@@ -114,26 +153,30 @@ class ContactScreen extends React.Component {
                 }
                 titleStyle={{ marginLeft: 10, fontSize: 18 }}
                 buttonStyle={{ backgroundColor: 'green' }}
+                onPress={() => {
+                  Linking.openURL('tel:${' + contact.phone + '}')
+                }}
               />
             </View>
 
-            {/* Botón para editar */}
+            {/* Botón para enviar SMS */}
             <View style={{ flex: 1, marginRight: 10 }}>
               <Button
                 type="outline"
                 icon={
                   <Icon
-                    name="create"
+                    name="sms"
                     size={28}
                     color='white'
                   />
                 }
                 titleStyle={{ marginLeft: 10, fontSize: 18 }}
-                buttonStyle={{ backgroundColor: 'gray', borderWidth: 0 }}
+                buttonStyle={{ backgroundColor: 'orange', borderWidth: 0 }}
                 onPress={() => {
                   this.setState(p => (
                     { editing: true }
                   ));
+                  Linking.openURL('sms:' + contact.phone + '?body=')
                 }}
               />
             </View>
@@ -152,23 +195,60 @@ const MainNavigator = createStackNavigator({
 
 const AppContainer = createAppContainer(MainNavigator);
 
+const Helper = {
+  db: null
+}
+
 class App extends React.Component {
+  constructor() {
+    super();
+    SQLite.DEBUG(true);
+    SQLite.enablePromise(false);
+
+    console.log('Abriendo base de datos ----------------');
+
+    Helper.db = SQLite.openDatabase({ name: 'app.db', location: 'default' });
+    Helper.db.executeSql('CREATE TABLE IF NOT EXISTS contacts ('
+      + 'id	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,'
+      + 'name	TEXT,'
+      + 'phone	TEXT,'
+      + 'email	TEXT'
+      + ');');
+  }
+
   render() {
     return <AppContainer />;
   }
 
   componentDidMount() {
-    SQLite.DEBUG(true);
-    SQLite.enablePromise(true);
+    /*SQLite.DEBUG(true);
+    SQLite.enablePromise(false);
 
-    SQLite.openDatabase({
-      name: "TestDatabase",
-      location: "default"
+    console.log('Abriendo base de datos ----------------');
+
+    Helper.db = SQLite.openDatabase({ name: 'app.db', location: 'default' });
+    Helper.db.executeSql('CREATE TABLE IF NOT EXISTS contacts ('
+      + 'id	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,'
+      + 'name	TEXT,'
+      + 'phone	TEXT,'
+      + 'email	TEXT'
+      + ');');*/
+
+    /*SQLite.openDatabase({
+      name: "app.db",
+      location: "default",
+
     }).then((db) => {
       console.log("Database open!");
+      db.executeSql('CREATE TABLE IF NOT EXISTS contacts ('
+        + 'id	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,'
+        + 'name	TEXT,'
+        + 'phone	TEXT,'
+        + 'email	TEXT'
+        + ');');
     }).catch(e => {
       console.log('There has been a problem with your operation: ' + e.message);
-    });
+    });*/
   }
 }
 
