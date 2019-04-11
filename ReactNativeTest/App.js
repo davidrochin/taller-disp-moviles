@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
-import { Platform, FlatList, StyleSheet, Text, View, TouchableOpacity, Modal, Alert, TouchableHighlight, Linking } from 'react-native';
+import {
+  Platform, FlatList, StyleSheet, Text, View, TouchableOpacity, Modal, Alert,
+  TouchableHighlight, Linking, KeyboardAvoidingView, ScrollView, DeviceEventEmitter
+} from 'react-native';
 
 import { ListItem, Header, Input, FormInput, Button, Card, Image, ActivityIndicator } from 'react-native-elements';
 
@@ -18,60 +21,77 @@ class HomeScreen extends React.Component {
 
   constructor(props) {
     super(props);
+
+    this.state = {
+      contacts: new Array(0),
+    }
+
+    this.updateContacts();
+  }
+
+  updateContacts() {
+    console.log('Actualizando lista de contactos');
+
+    Helper.db.transaction(function (txn) {
+      txn.executeSql(
+        'SELECT * FROM contacts',
+        [],
+        function (tx, res) {
+
+          contactList = new Array(0);
+
+          for (i = 0; i < res.rows.length; i++) {
+            res.rows.item(i).key = res.rows.item(i).id.toString();
+            contactList.push(res.rows.item(i));
+          }
+          console.log('Lista de contactos:');
+          console.log(contactList);
+
+          this.setState(p => ({
+            contacts: contactList
+          }));
+
+        }.bind(this)
+      );
+    }.bind(this));
   }
 
   static navigationOptions = {
     title: 'Contactos',
   };
 
+  componentWillMount() {
+    DeviceEventEmitter.addListener('CONTACTS_UPDATED', (e) => { 
+      this.updateContacts();
+    })
+  }
+
   render() {
     const { navigate } = this.props.navigation;
-    contactList = new Array(0);
 
-    console.log('Actualizando lista de contactos');
-
-    Helper.db.transaction(function (txn) {
-      txn.executeSql(
-        'SELECT * FROM contacts',
-        [], 
-        function (tx, res) {
-
-          console.log(res.rows);
-          for(i = 0; i < res.rows.length; i++){
-            contactList.push(res.rows.item(i));
-          }
-
-        }
-      );
-    });
-
-    
-    /*Helper.db.transaction(function(txn) {
-      txn.executeSql(
-        'SELECT * FROM contacts',
-        function(tx, res) {
-          console.log('Imprimiendo Res');
-          console.log(res);
-        }
-      );
-    });*/
-
-    console.log('Rendering with: ' + contactList);
+    console.log('Rendering with: ')
+    console.log(this.state.contacts);
 
     return (
       <View style={styles.container} style={{ flex: 1 }}>
 
         <FlatList style={{ flex: 1 }}
-          data={contactList}
+          data={this.state.contacts}
           renderItem={
             ({ item }) =>
               <ContactListItem
                 item={item}
                 onOpen={() => {
-                  navigate('Contact', { contact: item });
+                  navigate('Contact', { contact: item, edit: false });
+                }}
+                onEdit={() => {
+                  navigate('Contact', { contact: item, edit: true });
                 }}
                 onCall={() => {
                   Linking.openURL('tel:${' + item.phone + '}')
+                }}
+                onSMS={() => {
+                  Linking.openURL('sms:' + item.phone)
                 }}
               />
           }
@@ -81,7 +101,7 @@ class HomeScreen extends React.Component {
         />
         <ActionButton
           buttonColor="rgba(231,76,60,1)"
-          onPress={() => { navigate('Contact') }}
+          onPress={() => { navigate('Contact', { edit: true }) }}
         />
 
       </View>
@@ -92,54 +112,87 @@ class HomeScreen extends React.Component {
 class ContactScreen extends React.Component {
 
   contact;
+  edit;
 
   constructor(props) {
     super(props);
     this.state = {
-      editing: false
+      editing: false,
+      name: '',
+      phone: '',
+      email: '',
     }
 
-    contact = this.props.navigation.getParam('contact', null);
+    this.contact = this.props.navigation.getParam('contact', null);
+    this.edit = this.props.navigation.getParam('edit', null);
+
+    // Cargar los datos del contacto en los params
+    if(this.contact != null){
+      this.props.navigation.setParams({ name: this.contact.name });
+      this.props.navigation.setParams({ phone: this.contact.phone });
+      this.props.navigation.setParams({ email: this.contact.email });
+    }
+    
   }
 
-  handlerEditButton() {
-    this.setState(p => (
-      { editing: 'true' }
-    ));
-  }
+  static navigationOptions = ({ navigation }) => {
+    return {
+      title: "Contacto",
+      headerRight: navigation.getParam('edit') ? (
+        <Button
+          title="Guardar" color="#000" type="clear"
+          onPress={() => {
+            console.log(navigation.state);
+            if (navigation.getParam('contact') == null) {
+              Helper.db.executeSql('INSERT INTO contacts (name, phone, email) VALUES (? ,? , ?)', [navigation.getParam('name'), navigation.getParam('phone'), navigation.getParam('email')]);
+            } else {
+              Helper.db.executeSql('UPDATE contacts SET name = ?, phone = ?, email = ? WHERE id = ' + navigation.getParam('contact').id, [navigation.getParam('name'), navigation.getParam('phone'), navigation.getParam('email')]);
+            }
 
-  static navigationOptions = {
-    title: "Contacto",
-    headerRight: (
-      <Button
-        onPress={() => {
-          SQLite.openDatabase({
-            name: "app.db",
-            location: "default",
-          }).then((db) => {
-            console.log("Database open!");
-            db.executeSql('INSERT INTO contacts (id, name, phone, email) VALUES (?, ?, ?, ?)', [contact.id, contact.name, contact.phone, contact.email]);
-          }).catch(e => {
-            console.log('There has been a problem with your operation: ' + e.message);
-          });
-        }}
-        title="Guardar"
-        color="#000"
-        type="clear"
-      />
-    ),
+            alert('El contacto ha sido guardado con éxito');
+
+            DeviceEventEmitter.emit('CONTACTS_UPDATED', {});
+          }}
+        />) : <Text></Text>,
+    }
   };
   render() {
     const { navigate } = this.props.navigation;
-    var contact = this.props.navigation.getParam('contact', null);
+    this.contact = this.props.navigation.getParam('contact', null);
+    this.edit = this.props.navigation.getParam('edit', null);
 
     return (
-      <View style={styles.container} style={{ flex: 1, backgroundColor: '#DDD' }}>
+      <ScrollView style={styles.container} style={{ flex: 1, backgroundColor: '#DDD' }}>
         <Card image={{ uri: 'http://lorempixel.com/400/200/nature' + '?rand=' + Math.random() }}>
-          <Input placeholder='Nombre' editable={this.state.editing}>{contact ? contact.name : ''}</Input>
-          <Input placeholder='Teléfono' editable={this.state.editing}>{contact ? contact.phone : ''}</Input>
-          <Input placeholder='E-mail' editable={this.state.editing}>{contact ? contact.email : ''}</Input>
-          <View style={{ flexDirection: 'row', marginTop: 40 }}>
+
+          {/* Nombre */}
+          <Input
+            placeholder='Nombre'
+            editable={this.state.editing || this.edit}
+            onChangeText={(text) => { this.props.navigation.setParams({ name: text }) }}
+          >
+            {this.contact ? this.contact.name : ''}
+          </Input>
+
+          {/* Teléfono */}
+          <Input
+            placeholder='Teléfono'
+            editable={this.state.editing || this.edit}
+            onChangeText={(text) => { this.props.navigation.setParams({ phone: text }) }}
+          >
+            {this.contact ? this.contact.phone : ''}
+          </Input>
+
+          {/* Correo */}
+          <Input
+            placeholder='E-mail'
+            editable={this.state.editing || this.edit}
+            onChangeText={(text) => { this.props.navigation.setParams({ email: text }) }}
+          >
+            {this.contact ? this.contact.email : ''}
+          </Input>
+
+          <View style={{ flexDirection: 'row', marginTop: 20 }}>
 
             {/* Botón para llamar */}
             <View style={{ flex: 1, marginRight: 10 }}>
@@ -154,7 +207,7 @@ class ContactScreen extends React.Component {
                 titleStyle={{ marginLeft: 10, fontSize: 18 }}
                 buttonStyle={{ backgroundColor: 'green' }}
                 onPress={() => {
-                  Linking.openURL('tel:${' + contact.phone + '}')
+                  Linking.openURL('tel:${' + this.contact.phone + '}')
                 }}
               />
             </View>
@@ -176,14 +229,14 @@ class ContactScreen extends React.Component {
                   this.setState(p => (
                     { editing: true }
                   ));
-                  Linking.openURL('sms:' + contact.phone + '?body=')
+                  Linking.openURL('sms:' + this.contact.phone + '?body=')
                 }}
               />
             </View>
 
           </View>
         </Card>
-      </View>
+      </ScrollView>
     );
   }
 }

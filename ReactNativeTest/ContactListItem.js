@@ -33,7 +33,7 @@ export default class ContactListItem extends React.Component {
             <ListItem
                 title={this.props.item.name}
                 titleStyle={{ color: 'black' }}
-                subtitle='6681732104'
+                subtitle={this.props.item.phone}
                 leftAvatar={{ source: { uri: 'http://lorempixel.com/256/256/people' + '?rand=' + Math.random() } }}
                 chevron
                 rightElement={
@@ -98,6 +98,6 @@ export default class ContactListItem extends React.Component {
 
 const styles = StyleSheet.create({
     listElement: {
-        height: 30
+        height: 40
     }
 });
