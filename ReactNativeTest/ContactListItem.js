@@ -36,7 +36,7 @@ export default class ContactListItem extends React.Component {
                 title={this.props.item.name}
                 titleStyle={{ color: 'black' }}
                 subtitle={this.props.item.phone}
-                leftAvatar={{ source: { uri: 'http://lorempixel.com/256/256/people' + '?rand=' + Math.random() } }}
+                leftAvatar={{ source: { uri: 'data:image/jpeg;base64,' + this.props.item.image } }}
                 chevron
                 onPress={this.props.onPress}
                 rightElement={

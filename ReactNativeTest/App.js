@@ -15,7 +15,17 @@ import { Menu, MenuOptions, MenuOption, MenuTrigger, MenuProvider } from 'react-
 
 import SQLite from "react-native-sqlite-storage";
 
+import ImagePicker from 'react-native-image-picker';
+
 import ContactListItem from './ContactListItem';
+
+const imagePickerOptions = {
+  title: 'Select Avatar',
+  storageOptions: {
+    skipBackup: true,
+    path: 'images',
+  },
+};
 
 class HomeScreen extends React.Component {
 
@@ -40,9 +50,16 @@ class HomeScreen extends React.Component {
 
           contactList = new Array(0);
 
+          console.log("Result:");
+          console.log(res.rows);
+
           for (i = 0; i < res.rows.length; i++) {
-            res.rows.item(i).key = res.rows.item(i).id.toString();
-            contactList.push(res.rows.item(i));
+
+            // Para evitar el bug raro
+            if (res.rows.item(i).key = res.rows.item(i).id != null) {
+              res.rows.item(i).key = res.rows.item(i).id.toString();
+              contactList.push(res.rows.item(i));
+            }
           }
           console.log('Lista de contactos:');
           console.log(contactList);
@@ -61,7 +78,7 @@ class HomeScreen extends React.Component {
   };
 
   componentWillMount() {
-    DeviceEventEmitter.addListener('CONTACTS_UPDATED', (e) => { 
+    DeviceEventEmitter.addListener('CONTACTS_UPDATED', (e) => {
       this.updateContacts();
     })
   }
@@ -98,7 +115,6 @@ class HomeScreen extends React.Component {
                   DeviceEventEmitter.emit('CONTACTS_UPDATED', {});
                 }}
                 onPress={() => {
-                  alert("onPress");
                   Linking.openURL('tel:${' + item.phone + '}')
                 }}
               />
@@ -126,6 +142,7 @@ class ContactScreen extends React.Component {
     super(props);
     this.state = {
       editing: false,
+      image: require('./img/avatar-placeholder.png'),
       name: '',
       phone: '',
       email: '',
@@ -135,12 +152,18 @@ class ContactScreen extends React.Component {
     this.edit = this.props.navigation.getParam('edit', null);
 
     // Cargar los datos del contacto en los params
-    if(this.contact != null){
+    if (this.contact != null) {
       this.props.navigation.setParams({ name: this.contact.name });
       this.props.navigation.setParams({ phone: this.contact.phone });
       this.props.navigation.setParams({ email: this.contact.email });
+      this.props.navigation.setParams({ image: this.contact.image });
+    } else {
+      this.props.navigation.setParams({ name: '' });
+      this.props.navigation.setParams({ phone: '' });
+      this.props.navigation.setParams({ email: '' });
+      this.props.navigation.setParams({ image: '' });
     }
-    
+
   }
 
   static navigationOptions = ({ navigation }) => {
@@ -152,9 +175,27 @@ class ContactScreen extends React.Component {
           onPress={() => {
             console.log(navigation.state);
             if (navigation.getParam('contact') == null) {
-              Helper.db.executeSql('INSERT INTO contacts (name, phone, email) VALUES (? ,? , ?)', [navigation.getParam('name'), navigation.getParam('phone'), navigation.getParam('email')]);
+
+              // Guardar el contacto
+              console.log(navigation.getParam('name'));
+              console.log(navigation.getParam('phone'));
+              console.log(navigation.getParam('email'));
+              console.log(navigation.getParam('image'));
+
+              if (navigation.getParam('image') == null || navigation.getParam('image') == undefined) {
+                Helper.db.executeSql('INSERT INTO contacts (name, phone, email) VALUES (? ,? , ?)', [navigation.getParam('name'), navigation.getParam('phone'), navigation.getParam('email')]);
+              } else {
+                Helper.db.executeSql('INSERT INTO contacts (name, phone, email, image) VALUES (?, ?, ?, ?)', [navigation.getParam('name'), navigation.getParam('phone'), navigation.getParam('email'), navigation.getParam('image')]);
+              }
             } else {
-              Helper.db.executeSql('UPDATE contacts SET name = ?, phone = ?, email = ? WHERE id = ' + navigation.getParam('contact').id, [navigation.getParam('name'), navigation.getParam('phone'), navigation.getParam('email')]);
+
+              // Actualizar el contacto
+              if (navigation.getParam('image') == null || navigation.getParam('image') == undefined) {
+                Helper.db.executeSql('UPDATE contacts SET name = ?, phone = ?, email = ? WHERE id = ' + navigation.getParam('contact').id, [navigation.getParam('name'), navigation.getParam('phone'), navigation.getParam('email')]);
+              } else {
+                Helper.db.executeSql('UPDATE contacts SET name = ?, phone = ?, email = ?, image = ? WHERE id = ' + navigation.getParam('contact').id, [navigation.getParam('name'), navigation.getParam('phone'), navigation.getParam('email'), navigation.getParam('image')]);
+              }
+
             }
 
             alert('El contacto ha sido guardado con éxito');
@@ -166,9 +207,17 @@ class ContactScreen extends React.Component {
   };
 
   componentWillMount() {
-    DeviceEventEmitter.addListener('CONTACTS_UPDATED', (e) => { 
+    DeviceEventEmitter.addListener('CONTACTS_UPDATED', (e) => {
       this.props.navigation.goBack();
-    })
+    });
+
+    if (this.contact != null && this.contact.image != null && this.contact.image.length > 0) {
+      const source = { uri: 'data:image/jpeg;base64,' + this.contact.image };
+      console.log(source);
+      this.setState({
+        image: source
+      });
+    }
   }
 
   render() {
@@ -178,7 +227,45 @@ class ContactScreen extends React.Component {
 
     return (
       <ScrollView style={styles.container} style={{ flex: 1, backgroundColor: '#DDD' }}>
-        <Card image={{ uri: 'http://lorempixel.com/400/200/nature' + '?rand=' + Math.random() }}>
+
+        {/* Tarjeta del contacto */}
+        <Card>
+
+          {/* Imagen */}
+          <TouchableOpacity onPress={(p) => {
+
+            // Mostrar el selector de imagen
+            if (this.state.editing || this.edit) {
+              ImagePicker.showImagePicker(imagePickerOptions, (response) => {
+                //console.log('Response = ', response);
+
+                if (response.didCancel) {
+                  console.log('User cancelled image picker');
+                } else if (response.error) {
+                  console.log('ImagePicker Error: ', response.error);
+                } else if (response.customButton) {
+                  console.log('User tapped custom button: ', response.customButton);
+                } else {
+                  //const source = { uri: response.uri };
+
+
+
+                  const source = { uri: 'data:image/jpeg;base64,' + response.data };
+                  this.props.navigation.setParams({ image: response.data })
+
+                  this.setState({
+                    avatarSource: source,
+                    image: source,
+                  });
+                }
+              })
+            }
+          }}>
+            <Image
+              source={this.state.image}
+              style={{ width: "100%", height: 200 }}
+            />
+          </TouchableOpacity>
 
           {/* Nombre */}
           <Input
@@ -279,9 +366,12 @@ class App extends React.Component {
     Helper.db.executeSql('CREATE TABLE IF NOT EXISTS contacts ('
       + 'id	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,'
       + 'name	TEXT,'
-      + 'phone	TEXT,'
-      + 'email	TEXT'
+      + 'phone TEXT,'
+      + 'email TEXT,'
+      + 'image TEXT'
       + ');');
+
+    //Helper.db.executeSql('INSERT INTO contacts (name, phone, email) VALUES (? ,? , ?)', ['David Rochin', '6681732104', 'jdrc8@hotmail.com']);
   }
 
   render() {
