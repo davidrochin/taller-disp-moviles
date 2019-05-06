@@ -18,6 +18,8 @@ import {
 
 import { material } from 'react-native-typography';
 
+import { Helper } from './App';
+
 export default class ContactListItem extends React.Component {
 
     constructor(props) {
@@ -36,6 +38,7 @@ export default class ContactListItem extends React.Component {
                 subtitle={this.props.item.phone}
                 leftAvatar={{ source: { uri: 'http://lorempixel.com/256/256/people' + '?rand=' + Math.random() } }}
                 chevron
+                onPress={this.props.onPress}
                 rightElement={
                     <MaterialDialog
                         title={'Acción'}
@@ -63,6 +66,16 @@ export default class ContactListItem extends React.Component {
                                     this.props.onEdit();
                                 }}>
                                 <Text style={material.subheading}>Editar</Text>
+                            </TouchableOpacity>
+
+                            {/* Eliminar */}
+                            <TouchableOpacity
+                                style={styles.listElement}
+                                onPress={() => {
+                                    this.setState({ opened: false });
+                                    this.props.onDelete();
+                                }}>
+                                <Text style={material.subheading}>Eliminar</Text>
                             </TouchableOpacity>
 
                             {/* Llamar */}

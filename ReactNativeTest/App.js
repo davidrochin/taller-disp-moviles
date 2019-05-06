@@ -34,7 +34,7 @@ class HomeScreen extends React.Component {
 
     Helper.db.transaction(function (txn) {
       txn.executeSql(
-        'SELECT * FROM contacts',
+        'SELECT * FROM contacts ORDER BY name',
         [],
         function (tx, res) {
 
@@ -69,7 +69,7 @@ class HomeScreen extends React.Component {
   render() {
     const { navigate } = this.props.navigation;
 
-    console.log('Rendering with: ')
+    console.log('Rendering list item with: ')
     console.log(this.state.contacts);
 
     return (
@@ -92,6 +92,14 @@ class HomeScreen extends React.Component {
                 }}
                 onSMS={() => {
                   Linking.openURL('sms:' + item.phone)
+                }}
+                onDelete={() => {
+                  Helper.db.executeSql('DELETE FROM contacts WHERE id == ?', [item.id]);
+                  DeviceEventEmitter.emit('CONTACTS_UPDATED', {});
+                }}
+                onPress={() => {
+                  alert("onPress");
+                  Linking.openURL('tel:${' + item.phone + '}')
                 }}
               />
           }
@@ -156,6 +164,13 @@ class ContactScreen extends React.Component {
         />) : <Text></Text>,
     }
   };
+
+  componentWillMount() {
+    DeviceEventEmitter.addListener('CONTACTS_UPDATED', (e) => { 
+      this.props.navigation.goBack();
+    })
+  }
+
   render() {
     const { navigate } = this.props.navigation;
     this.contact = this.props.navigation.getParam('contact', null);
