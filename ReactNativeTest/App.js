@@ -55,6 +55,8 @@ class HomeScreen extends React.Component {
 
           for (i = 0; i < res.rows.length; i++) {
 
+            console.log(res.rows.item(i));
+
             // Para evitar el bug raro
             if (res.rows.item(i).key = res.rows.item(i).id != null) {
               res.rows.item(i).key = res.rows.item(i).id.toString();
@@ -153,6 +155,7 @@ class ContactScreen extends React.Component {
 
     // Cargar los datos del contacto en los params
     if (this.contact != null) {
+      this.props.navigation.setParams({ id: this.contact.id });
       this.props.navigation.setParams({ name: this.contact.name });
       this.props.navigation.setParams({ phone: this.contact.phone });
       this.props.navigation.setParams({ email: this.contact.email });
@@ -188,6 +191,9 @@ class ContactScreen extends React.Component {
                 Helper.db.executeSql('INSERT INTO contacts (name, phone, email, image) VALUES (?, ?, ?, ?)', [navigation.getParam('name'), navigation.getParam('phone'), navigation.getParam('email'), navigation.getParam('image')]);
               }
             } else {
+
+              console.log("Actualizando el contacto ---------------------");
+              console.log([navigation.getParam('id'), navigation.getParam('name'), navigation.getParam('phone'), navigation.getParam('email'), navigation.getParam('image')]);
 
               // Actualizar el contacto
               if (navigation.getParam('image') == null || navigation.getParam('image') == undefined) {
@@ -294,7 +300,7 @@ class ContactScreen extends React.Component {
             {this.contact ? this.contact.email : ''}
           </Input>
 
-          <View style={{ flexDirection: 'row', marginTop: 20 }}>
+          <View style={this.contact ? {display: "flex", flexDirection: 'row', marginTop: 20} : {display: "none"} }>
 
             {/* Botón para llamar */}
             <View style={{ flex: 1, marginRight: 10 }}>
@@ -371,7 +377,6 @@ class App extends React.Component {
       + 'image TEXT'
       + ');');
 
-    //Helper.db.executeSql('INSERT INTO contacts (name, phone, email) VALUES (? ,? , ?)', ['David Rochin', '6681732104', 'jdrc8@hotmail.com']);
   }
 
   render() {
@@ -379,34 +384,6 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    /*SQLite.DEBUG(true);
-    SQLite.enablePromise(false);
-
-    console.log('Abriendo base de datos ----------------');
-
-    Helper.db = SQLite.openDatabase({ name: 'app.db', location: 'default' });
-    Helper.db.executeSql('CREATE TABLE IF NOT EXISTS contacts ('
-      + 'id	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,'
-      + 'name	TEXT,'
-      + 'phone	TEXT,'
-      + 'email	TEXT'
-      + ');');*/
-
-    /*SQLite.openDatabase({
-      name: "app.db",
-      location: "default",
-
-    }).then((db) => {
-      console.log("Database open!");
-      db.executeSql('CREATE TABLE IF NOT EXISTS contacts ('
-        + 'id	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,'
-        + 'name	TEXT,'
-        + 'phone	TEXT,'
-        + 'email	TEXT'
-        + ');');
-    }).catch(e => {
-      console.log('There has been a problem with your operation: ' + e.message);
-    });*/
   }
 }
 
