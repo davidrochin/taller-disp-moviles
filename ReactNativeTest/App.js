@@ -25,6 +25,11 @@ const imagePickerOptions = {
     skipBackup: true,
     path: 'images',
   },
+  quality: 0.3,
+  maxWidth: 500,
+  maxHeight: 500,
+  //allowsEditing: true,
+  //noData: true,
 };
 
 class HomeScreen extends React.Component {
@@ -285,6 +290,7 @@ class ContactScreen extends React.Component {
           {/* Teléfono */}
           <Input
             placeholder='Teléfono'
+            keyboardType = 'numeric'
             editable={this.state.editing || this.edit}
             onChangeText={(text) => { this.props.navigation.setParams({ phone: text }) }}
           >
